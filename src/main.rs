@@ -6,12 +6,31 @@ struct File {
     contents: Vec<File>
 }
 
+static mut IGNORED: bool = false;
+
 fn read_folder(folder: File, start_folder_path: String) -> Result<File, std::io::Error> {
     if !folder.is_folder {
         println!("Something went wrong!");
     }
 
     let mut contents = Vec::new();
+
+    if folder.name.clone() == "target" || folder.name.clone() == "build" || folder.name.clone() == "node_modules"  || folder.name.clone() == ".git" {
+        unsafe {
+            IGNORED = true;
+        }
+        contents.push(File {
+            is_folder: false,
+            name: "(ommitted)".to_string(),
+            contents: Vec::new(),
+        });
+        return Ok(File {
+            is_folder: true,
+            name: folder.name,
+            contents,
+        });
+    }
+
 
     let cwd = std::env::current_dir()?;
     let folder_path = cwd.join(format!("{}/{}", start_folder_path, folder.name.clone()));
@@ -91,4 +110,10 @@ fn main() {
     }
 
     draw_files(&files, 0);
+
+    unsafe {
+        if IGNORED {
+            println!("\n(Ignored 1 or more folders that likely shouldn't be listed)")
+        }
+    }
 }
