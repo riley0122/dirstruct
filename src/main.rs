@@ -7,6 +7,7 @@ struct File {
 }
 
 static mut IGNORED: bool = false;
+static mut BASELINE: bool = true;
 
 fn read_folder(folder: File, start_folder_path: String) -> Result<File, std::io::Error> {
     if !folder.is_folder {
@@ -63,7 +64,7 @@ fn read_folder(folder: File, start_folder_path: String) -> Result<File, std::io:
     })
 }
 
-fn draw_files(files: &Vec<File>, depth: u8) {
+fn draw_files(files: &Vec<File>, depth: u8, is_top: bool) {
     for i in 0..files.len() {
         let file = &files[i.clone()];
 
@@ -74,10 +75,24 @@ fn draw_files(files: &Vec<File>, depth: u8) {
         } else if i == 0 && depth == 0{
             start_char = "┬";
         }
-        println!("{}{} {}", "│ ".repeat(depth.clone().try_into().unwrap()), start_char ,file.name.clone());
+
+        let mut prefix = "│ ";
+        unsafe {
+            if !BASELINE {
+                prefix = "  ";
+            }
+        }
+
+        println!("{}{} {}", prefix.repeat(depth.clone().try_into().unwrap()), start_char ,file.name.clone());
+
+        if is_top && i == files.len() - 1{
+            unsafe {
+                BASELINE = false;
+            }
+        }
 
         if file.is_folder.clone() {
-            draw_files(&file.contents, depth + 1);
+            draw_files(&file.contents, depth + 1, false);
         }
     }
 }
@@ -109,7 +124,7 @@ fn main() {
         }
     }
 
-    draw_files(&files, 0);
+    draw_files(&files, 0, true);
 
     unsafe {
         if IGNORED {
